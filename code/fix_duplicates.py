@@ -1,4 +1,3 @@
-
 from lms_core.models import CourseMember
 from collections import defaultdict
 

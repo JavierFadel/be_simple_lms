@@ -30,7 +30,7 @@ def register_user(request, data: UserRegisterIn, profile_picture: UploadedFile =
     
     # FIXME: matikan rate limiter untuk testing
     # Check rate limiting
-    # check_registration_rate_limit(request)
+    check_registration_rate_limit(request)
     
     # Validate password
     if not validate_password(data.password):
