@@ -19,6 +19,8 @@ class UserRegisterOut(Schema):
     email: str
     first_name: str
     last_name: str
+    access: str
+    refresh: str
     message: str
 
 class UserOut(Schema):
@@ -214,3 +216,52 @@ class UserStatsOut(Schema):
     courses_created: int
     contents_completed: int
     bookmarks_count: int
+
+# Batch Enrollment Schemas
+class BatchEnrollIn(Schema):
+    student_emails: List[str]
+
+# Comment Moderation Schemas
+class CommentModerationIn(Schema):
+    is_approved: bool
+
+# Enhanced User Activity Dashboard
+class UserActivityDashboardOut(Schema):
+    courses_enrolled: int
+    courses_created: int
+    contents_completed: int
+    bookmarks_count: int
+    comments_written: int
+
+# Enhanced Course Analytics
+class CourseAnalyticsOut(Schema):
+    total_students: int
+    total_contents: int
+    total_announcements: int
+    total_comments: int
+    total_feedback: int
+    completion_rate: float
+    average_rating: float
+
+# Content Scheduling Schemas
+class ContentScheduleIn(Schema):
+    scheduled_release: datetime
+
+# Enrollment Limit Schemas
+class EnrollmentLimitIn(Schema):
+    max_enrollment: int
+
+# Certificate Schemas
+class CertificateEligibilityOut(Schema):
+    is_eligible: bool
+    total_contents: int
+    completed_contents: int
+    completion_percentage: float
+
+class UserCertificateOut(Schema):
+    course_id: int
+    course_name: str
+    course_teacher: str
+    completion_date: datetime
+    total_contents: int
+    completed_contents: int

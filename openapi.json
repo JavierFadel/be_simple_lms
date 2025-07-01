@@ -1,0 +1,3060 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NinjaAPI",
+    "version": "1.0.0",
+    "description": ""
+  },
+  "paths": {
+    "/api/v1/register": {
+      "post": {
+        "operationId": "lms_core_api_register_user",
+        "summary": "Register User",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRegisterOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Register new user with rate limiting",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "profile_picture": {
+                    "format": "binary",
+                    "title": "Profile Picture",
+                    "type": "string"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/UserRegisterIn"
+                  }
+                },
+                "title": "MultiPartBodyParams",
+                "type": "object",
+                "required": [
+                  "data"
+                ]
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/profile/{user_id}": {
+      "get": {
+        "operationId": "lms_core_api_show_profile",
+        "summary": "Show Profile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserFullProfileOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Show full profile of a user including courses",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/profile/edit": {
+      "put": {
+        "operationId": "lms_core_api_edit_profile",
+        "summary": "Edit Profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Edit current user's profile",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "profile_picture": {
+                    "format": "binary",
+                    "title": "Profile Picture",
+                    "type": "string"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/UserProfileIn"
+                  }
+                },
+                "title": "MultiPartBodyParams",
+                "type": "object",
+                "required": [
+                  "data"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/categories": {
+      "post": {
+        "operationId": "lms_core_api_create_category",
+        "summary": "Create Category",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseCategoryOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Create a new course category",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseCategoryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "lms_core_api_list_categories",
+        "summary": "List Categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseCategoryOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "List all categories"
+      }
+    },
+    "/api/v1/categories/{category_id}": {
+      "delete": {
+        "operationId": "lms_core_api_delete_category",
+        "summary": "Delete Category",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "schema": {
+              "title": "Category Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Delete a category (only by creator)",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/announcements": {
+      "post": {
+        "operationId": "lms_core_api_create_announcement",
+        "summary": "Create Announcement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseAnnouncementOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Create course announcement (teacher only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseAnnouncementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "lms_core_api_list_announcements",
+        "summary": "List Announcements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseAnnouncementOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "List course announcements",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/announcements/{announcement_id}": {
+      "put": {
+        "operationId": "lms_core_api_update_announcement",
+        "summary": "Update Announcement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "announcement_id",
+            "schema": {
+              "title": "Announcement Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseAnnouncementOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Update announcement (teacher only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseAnnouncementUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "lms_core_api_delete_announcement",
+        "summary": "Delete Announcement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "announcement_id",
+            "schema": {
+              "title": "Announcement Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Delete announcement (teacher only)",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/content/{content_id}/complete": {
+      "post": {
+        "operationId": "lms_core_api_mark_content_complete",
+        "summary": "Mark Content Complete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentCompletionOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Mark content as completed by student",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "lms_core_api_remove_completion",
+        "summary": "Remove Completion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Remove content completion",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/completions": {
+      "get": {
+        "operationId": "lms_core_api_list_completions",
+        "summary": "List Completions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ContentCompletionOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "List user's completions for a course",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/feedback": {
+      "post": {
+        "operationId": "lms_core_api_create_feedback",
+        "summary": "Create Feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseFeedbackOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Create course feedback",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseFeedbackIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "lms_core_api_list_feedback",
+        "summary": "List Feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseFeedbackOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "List all feedback for a course",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "lms_core_api_update_feedback",
+        "summary": "Update Feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseFeedbackOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Update own feedback",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseFeedbackUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "lms_core_api_delete_feedback",
+        "summary": "Delete Feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Delete own feedback",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/content/{content_id}/bookmark": {
+      "post": {
+        "operationId": "lms_core_api_create_bookmark",
+        "summary": "Create Bookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentBookmarkOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Create content bookmark",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "lms_core_api_delete_bookmark",
+        "summary": "Delete Bookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Delete bookmark",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/bookmarks": {
+      "get": {
+        "operationId": "lms_core_api_list_bookmarks",
+        "summary": "List Bookmarks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ContentBookmarkOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "List user's bookmarks",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses": {
+      "post": {
+        "operationId": "lms_core_api_create_course",
+        "summary": "Create Course",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseSchemaOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Create new course with rate limiting",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "image": {
+                    "format": "binary",
+                    "title": "Image",
+                    "type": "string"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/CourseSchemaIn"
+                  }
+                },
+                "title": "MultiPartBodyParams",
+                "type": "object",
+                "required": [
+                  "data"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "lms_core_api_list_courses",
+        "summary": "List Courses",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page Size"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedCourseSchemaOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "List all courses"
+      }
+    },
+    "/api/v1/courses/{course_id}": {
+      "get": {
+        "operationId": "lms_core_api_get_course",
+        "summary": "Get Course",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseSchemaOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get course details",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/content": {
+      "post": {
+        "operationId": "lms_core_api_list_course_content",
+        "summary": "List Course Content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseContentFull"
+                }
+              }
+            }
+          }
+        },
+        "description": "List course content with publish status and scheduling filtering",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "lms_core_api_list_course_content",
+        "summary": "List Course Content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseContentFull"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "List course content with publish status filtering",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/content/{content_id}": {
+      "put": {
+        "operationId": "lms_core_api_update_content",
+        "summary": "Update Content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseContentFull"
+                }
+              }
+            }
+          }
+        },
+        "description": "Update content (teacher only)",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file_attachment": {
+                    "format": "binary",
+                    "title": "File Attachment",
+                    "type": "string"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/CourseContentUpdate"
+                  }
+                },
+                "title": "MultiPartBodyParams",
+                "type": "object",
+                "required": [
+                  "data"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/content/{content_id}/publish": {
+      "patch": {
+        "operationId": "lms_core_api_toggle_content_publish",
+        "summary": "Toggle Content Publish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Toggle content publish status",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/content/{content_id}/comments": {
+      "post": {
+        "operationId": "lms_core_api_create_comment",
+        "summary": "Create Comment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseCommentOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Create comment with rate limiting",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseCommentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "lms_core_api_list_comments",
+        "summary": "List Comments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseCommentOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "List content comments (only approved for students)",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/stats": {
+      "get": {
+        "operationId": "lms_core_api_get_course_stats",
+        "summary": "Get Course Stats",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseStatsOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get course statistics",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/profile/stats": {
+      "get": {
+        "operationId": "lms_core_api_get_user_stats",
+        "summary": "Get User Stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserStatsOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get user statistics",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/batch-enroll": {
+      "post": {
+        "operationId": "lms_core_api_batch_enroll_students",
+        "summary": "Batch Enroll Students",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Batch enroll students to course (teacher only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchEnrollIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/content/{content_id}/comments/{comment_id}/moderate": {
+      "patch": {
+        "operationId": "lms_core_api_moderate_comment",
+        "summary": "Moderate Comment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "comment_id",
+            "schema": {
+              "title": "Comment Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Moderate comment (teacher only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentModerationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/profile/activity-dashboard": {
+      "get": {
+        "operationId": "lms_core_api_get_user_activity_dashboard",
+        "summary": "Get User Activity Dashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserActivityDashboardOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get comprehensive user activity dashboard",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/analytics": {
+      "get": {
+        "operationId": "lms_core_api_get_course_analytics",
+        "summary": "Get Course Analytics",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseAnalyticsOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get comprehensive course analytics",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/content/{content_id}/schedule": {
+      "patch": {
+        "operationId": "lms_core_api_schedule_content",
+        "summary": "Schedule Content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "schema": {
+              "title": "Content Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Schedule content release (teacher only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentScheduleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/enrollment-limit": {
+      "patch": {
+        "operationId": "lms_core_api_set_enrollment_limit",
+        "summary": "Set Enrollment Limit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Set course enrollment limit (teacher only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollmentLimitIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/enroll": {
+      "post": {
+        "operationId": "lms_core_api_enroll_in_course",
+        "summary": "Enroll In Course",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Enroll in course with limits checking",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/certificate": {
+      "get": {
+        "operationId": "lms_core_api_get_course_certificate",
+        "summary": "Get Course Certificate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Generate course completion certificate",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}/certificate/check": {
+      "get": {
+        "operationId": "lms_core_api_check_certificate_eligibility",
+        "summary": "Check Certificate Eligibility",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateEligibilityOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Check if user is eligible for certificate",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/my-certificates": {
+      "get": {
+        "operationId": "lms_core_api_list_user_certificates",
+        "summary": "List User Certificates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserCertificateOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "List all certificates earned by user",
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/sign-in": {
+      "post": {
+        "operationId": "ninja_simple_jwt_auth_views_api_mobile_sign_in",
+        "summary": "Mobile Sign In",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileSignInResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/auth/token-refresh": {
+      "post": {
+        "operationId": "ninja_simple_jwt_auth_views_api_mobile_token_refresh",
+        "summary": "Mobile Token Refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileTokenRefreshResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MobileTokenRefreshRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserRegisterOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string"
+          },
+          "access": {
+            "title": "Access",
+            "type": "string"
+          },
+          "refresh": {
+            "title": "Refresh",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "email",
+          "first_name",
+          "last_name",
+          "access",
+          "refresh",
+          "message"
+        ],
+        "title": "UserRegisterOut",
+        "type": "object"
+      },
+      "UserRegisterIn": {
+        "properties": {
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string"
+          },
+          "phone_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Number"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "required": [
+          "username",
+          "email",
+          "password",
+          "first_name",
+          "last_name",
+          "phone_number",
+          "description"
+        ],
+        "title": "UserRegisterIn",
+        "type": "object"
+      },
+      "CourseCategoryOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "created_by",
+          "created_at"
+        ],
+        "title": "CourseCategoryOut",
+        "type": "object"
+      },
+      "CourseSchemaOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "price": {
+            "title": "Price",
+            "type": "integer"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image"
+          },
+          "teacher": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CourseCategoryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "price",
+          "image",
+          "teacher",
+          "category",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CourseSchemaOut",
+        "type": "object"
+      },
+      "UserFullProfileOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserProfileOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "courses_enrolled": {
+            "items": {
+              "$ref": "#/components/schemas/CourseSchemaOut"
+            },
+            "title": "Courses Enrolled",
+            "type": "array"
+          },
+          "courses_created": {
+            "items": {
+              "$ref": "#/components/schemas/CourseSchemaOut"
+            },
+            "title": "Courses Created",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "email",
+          "first_name",
+          "last_name",
+          "profile",
+          "courses_enrolled",
+          "courses_created"
+        ],
+        "title": "UserFullProfileOut",
+        "type": "object"
+      },
+      "UserOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "first_name",
+          "last_name"
+        ],
+        "title": "UserOut",
+        "type": "object"
+      },
+      "UserProfileOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "phone_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Number"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "profile_picture": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Picture"
+          }
+        },
+        "required": [
+          "id",
+          "phone_number",
+          "description",
+          "profile_picture"
+        ],
+        "title": "UserProfileOut",
+        "type": "object"
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "success",
+            "title": "Status"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse",
+        "type": "object"
+      },
+      "UserProfileIn": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Number"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "phone_number",
+          "description"
+        ],
+        "title": "UserProfileIn",
+        "type": "object"
+      },
+      "CourseCategoryIn": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "CourseCategoryIn",
+        "type": "object"
+      },
+      "CourseAnnouncementOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseSchemaOut"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "publish_date": {
+            "format": "date-time",
+            "title": "Publish Date",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "course",
+          "created_by",
+          "publish_date",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CourseAnnouncementOut",
+        "type": "object"
+      },
+      "CourseAnnouncementIn": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "publish_date": {
+            "format": "date-time",
+            "title": "Publish Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "publish_date"
+        ],
+        "title": "CourseAnnouncementIn",
+        "type": "object"
+      },
+      "CourseAnnouncementUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "publish_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publish Date"
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "publish_date"
+        ],
+        "title": "CourseAnnouncementUpdate",
+        "type": "object"
+      },
+      "ContentCompletionOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "content": {
+            "$ref": "#/components/schemas/CourseContentMini"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "student",
+          "content",
+          "completed_at"
+        ],
+        "title": "ContentCompletionOut",
+        "type": "object"
+      },
+      "CourseContentMini": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "course_id": {
+            "$ref": "#/components/schemas/CourseSchemaOut"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "course_id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CourseContentMini",
+        "type": "object"
+      },
+      "CourseFeedbackOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseSchemaOut"
+          },
+          "rating": {
+            "title": "Rating",
+            "type": "integer"
+          },
+          "feedback_text": {
+            "title": "Feedback Text",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "student",
+          "course",
+          "rating",
+          "feedback_text",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CourseFeedbackOut",
+        "type": "object"
+      },
+      "CourseFeedbackIn": {
+        "properties": {
+          "rating": {
+            "title": "Rating",
+            "type": "integer"
+          },
+          "feedback_text": {
+            "title": "Feedback Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rating",
+          "feedback_text"
+        ],
+        "title": "CourseFeedbackIn",
+        "type": "object"
+      },
+      "CourseFeedbackUpdate": {
+        "properties": {
+          "rating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "feedback_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Text"
+          }
+        },
+        "required": [
+          "rating",
+          "feedback_text"
+        ],
+        "title": "CourseFeedbackUpdate",
+        "type": "object"
+      },
+      "ContentBookmarkOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "content": {
+            "$ref": "#/components/schemas/CourseContentFull"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "student",
+          "content",
+          "created_at"
+        ],
+        "title": "ContentBookmarkOut",
+        "type": "object"
+      },
+      "CourseContentFull": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          },
+          "file_attachment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Attachment"
+          },
+          "course_id": {
+            "$ref": "#/components/schemas/CourseSchemaOut"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "video_url",
+          "file_attachment",
+          "course_id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CourseContentFull",
+        "type": "object"
+      },
+      "CourseSchemaIn": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "price": {
+            "title": "Price",
+            "type": "integer"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "price",
+          "category_id",
+          "teacher_id"
+        ],
+        "title": "CourseSchemaIn",
+        "type": "object"
+      },
+      "Input": {
+        "properties": {
+          "page": {
+            "default": 1,
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size"
+          }
+        },
+        "title": "Input",
+        "type": "object"
+      },
+      "PagedCourseSchemaOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CourseSchemaOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "count"
+        ],
+        "title": "PagedCourseSchemaOut",
+        "type": "object"
+      },
+      "CourseContentUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "video_url",
+          "status"
+        ],
+        "title": "CourseContentUpdate",
+        "type": "object"
+      },
+      "CourseCommentOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "content_id": {
+            "$ref": "#/components/schemas/CourseContentMini"
+          },
+          "member_id": {
+            "$ref": "#/components/schemas/CourseMemberOut"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "content_id",
+          "member_id",
+          "comment",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CourseCommentOut",
+        "type": "object"
+      },
+      "CourseMemberOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "course_id": {
+            "$ref": "#/components/schemas/CourseSchemaOut"
+          },
+          "user_id": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "roles": {
+            "title": "Roles",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "course_id",
+          "user_id",
+          "roles",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CourseMemberOut",
+        "type": "object"
+      },
+      "CourseCommentIn": {
+        "properties": {
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          }
+        },
+        "required": [
+          "comment"
+        ],
+        "title": "CourseCommentIn",
+        "type": "object"
+      },
+      "CourseStatsOut": {
+        "properties": {
+          "total_students": {
+            "title": "Total Students",
+            "type": "integer"
+          },
+          "total_contents": {
+            "title": "Total Contents",
+            "type": "integer"
+          },
+          "total_announcements": {
+            "title": "Total Announcements",
+            "type": "integer"
+          },
+          "completion_rate": {
+            "title": "Completion Rate",
+            "type": "number"
+          }
+        },
+        "required": [
+          "total_students",
+          "total_contents",
+          "total_announcements",
+          "completion_rate"
+        ],
+        "title": "CourseStatsOut",
+        "type": "object"
+      },
+      "UserStatsOut": {
+        "properties": {
+          "courses_enrolled": {
+            "title": "Courses Enrolled",
+            "type": "integer"
+          },
+          "courses_created": {
+            "title": "Courses Created",
+            "type": "integer"
+          },
+          "contents_completed": {
+            "title": "Contents Completed",
+            "type": "integer"
+          },
+          "bookmarks_count": {
+            "title": "Bookmarks Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "courses_enrolled",
+          "courses_created",
+          "contents_completed",
+          "bookmarks_count"
+        ],
+        "title": "UserStatsOut",
+        "type": "object"
+      },
+      "BatchEnrollIn": {
+        "properties": {
+          "student_emails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Student Emails",
+            "type": "array"
+          }
+        },
+        "required": [
+          "student_emails"
+        ],
+        "title": "BatchEnrollIn",
+        "type": "object"
+      },
+      "CommentModerationIn": {
+        "properties": {
+          "is_approved": {
+            "title": "Is Approved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_approved"
+        ],
+        "title": "CommentModerationIn",
+        "type": "object"
+      },
+      "UserActivityDashboardOut": {
+        "properties": {
+          "courses_enrolled": {
+            "title": "Courses Enrolled",
+            "type": "integer"
+          },
+          "courses_created": {
+            "title": "Courses Created",
+            "type": "integer"
+          },
+          "contents_completed": {
+            "title": "Contents Completed",
+            "type": "integer"
+          },
+          "bookmarks_count": {
+            "title": "Bookmarks Count",
+            "type": "integer"
+          },
+          "comments_written": {
+            "title": "Comments Written",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "courses_enrolled",
+          "courses_created",
+          "contents_completed",
+          "bookmarks_count",
+          "comments_written"
+        ],
+        "title": "UserActivityDashboardOut",
+        "type": "object"
+      },
+      "CourseAnalyticsOut": {
+        "properties": {
+          "total_students": {
+            "title": "Total Students",
+            "type": "integer"
+          },
+          "total_contents": {
+            "title": "Total Contents",
+            "type": "integer"
+          },
+          "total_announcements": {
+            "title": "Total Announcements",
+            "type": "integer"
+          },
+          "total_comments": {
+            "title": "Total Comments",
+            "type": "integer"
+          },
+          "total_feedback": {
+            "title": "Total Feedback",
+            "type": "integer"
+          },
+          "completion_rate": {
+            "title": "Completion Rate",
+            "type": "number"
+          },
+          "average_rating": {
+            "title": "Average Rating",
+            "type": "number"
+          }
+        },
+        "required": [
+          "total_students",
+          "total_contents",
+          "total_announcements",
+          "total_comments",
+          "total_feedback",
+          "completion_rate",
+          "average_rating"
+        ],
+        "title": "CourseAnalyticsOut",
+        "type": "object"
+      },
+      "ContentScheduleIn": {
+        "properties": {
+          "scheduled_release": {
+            "format": "date-time",
+            "title": "Scheduled Release",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scheduled_release"
+        ],
+        "title": "ContentScheduleIn",
+        "type": "object"
+      },
+      "EnrollmentLimitIn": {
+        "properties": {
+          "max_enrollment": {
+            "title": "Max Enrollment",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "max_enrollment"
+        ],
+        "title": "EnrollmentLimitIn",
+        "type": "object"
+      },
+      "CertificateEligibilityOut": {
+        "properties": {
+          "is_eligible": {
+            "title": "Is Eligible",
+            "type": "boolean"
+          },
+          "total_contents": {
+            "title": "Total Contents",
+            "type": "integer"
+          },
+          "completed_contents": {
+            "title": "Completed Contents",
+            "type": "integer"
+          },
+          "completion_percentage": {
+            "title": "Completion Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "is_eligible",
+          "total_contents",
+          "completed_contents",
+          "completion_percentage"
+        ],
+        "title": "CertificateEligibilityOut",
+        "type": "object"
+      },
+      "UserCertificateOut": {
+        "properties": {
+          "course_id": {
+            "title": "Course Id",
+            "type": "integer"
+          },
+          "course_name": {
+            "title": "Course Name",
+            "type": "string"
+          },
+          "course_teacher": {
+            "title": "Course Teacher",
+            "type": "string"
+          },
+          "completion_date": {
+            "format": "date-time",
+            "title": "Completion Date",
+            "type": "string"
+          },
+          "total_contents": {
+            "title": "Total Contents",
+            "type": "integer"
+          },
+          "completed_contents": {
+            "title": "Completed Contents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "course_id",
+          "course_name",
+          "course_teacher",
+          "completion_date",
+          "total_contents",
+          "completed_contents"
+        ],
+        "title": "UserCertificateOut",
+        "type": "object"
+      },
+      "MobileSignInResponse": {
+        "properties": {
+          "refresh": {
+            "title": "Refresh",
+            "type": "string"
+          },
+          "access": {
+            "title": "Access",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh",
+          "access"
+        ],
+        "title": "MobileSignInResponse",
+        "type": "object"
+      },
+      "SignInRequest": {
+        "properties": {
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "SignInRequest",
+        "type": "object"
+      },
+      "MobileTokenRefreshResponse": {
+        "properties": {
+          "access": {
+            "title": "Access",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access"
+        ],
+        "title": "MobileTokenRefreshResponse",
+        "type": "object"
+      },
+      "MobileTokenRefreshRequest": {
+        "properties": {
+          "refresh": {
+            "title": "Refresh",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh"
+        ],
+        "title": "MobileTokenRefreshRequest",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "JWTAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": []
+}

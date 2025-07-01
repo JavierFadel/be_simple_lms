@@ -2,9 +2,19 @@ import re
 from django.http import HttpRequest
 from django.utils import timezone
 from datetime import timedelta, date
-from lms_core.models import RegistrationAttempt
+from lms_core.models import RegistrationAttempt, Comment
 from ninja.errors import HttpError
 from lms_core.models import CommentRateLimit, CourseCreationLimit, ContentCreationLimit
+from ninja.security import HttpBearer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+class JWTAuth(HttpBearer):
+    def authenticate(self, request, token):
+        validated = JWTAuthentication().authenticate(request)
+        if validated is None:
+            raise Exception("Invalid token")
+        user, _ = validated
+        return user
 
 def calculator(a, b, operator):
     if operator == '+':
@@ -151,3 +161,23 @@ def can_view_content(user, content):
         return True
     
     return False
+
+def can_view_content(user, content):
+    """Check if user can view content based on schedule and publish status"""
+    # Teachers can always view content
+    if is_teacher_of_course(user, content.course_id):
+        return True
+    
+    # Check if content is published
+    if content.status != 'published':
+        return False
+    
+    # Check if content is scheduled and time has passed
+    if content.scheduled_release and timezone.now() < content.scheduled_release:
+        return False
+    
+    return True
+
+def get_approved_comments(content):
+    """Get only approved comments for content"""
+    return Comment.objects.filter(content_id=content, is_approved=True)

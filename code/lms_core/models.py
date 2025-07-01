@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 
-# Create your models here.
-
 class CourseCategory(models.Model):
     name = models.CharField("Nama Kategori", max_length=100, unique=True)
     description = models.TextField("Deskripsi", blank=True, null=True)
@@ -26,6 +24,7 @@ class Course(models.Model):
     price = models.IntegerField("Harga")
     image = models.ImageField("Gambar", upload_to="course", blank=True, null=True)
     teacher = models.ForeignKey(User, verbose_name="Pengajar", on_delete=models.RESTRICT)
+    max_enrollment = models.IntegerField("Maximum Enrollment", null=True, blank=True)
     category = models.ForeignKey(CourseCategory, verbose_name="Kategori", on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField("Dibuat pada", auto_now_add=True)
     updated_at = models.DateTimeField("Diperbarui pada", auto_now=True)
@@ -70,6 +69,7 @@ class CourseContent(models.Model):
     parent_id = models.ForeignKey("self", verbose_name="induk", 
                                 on_delete=models.RESTRICT, null=True, blank=True)
     status = models.CharField("Status", max_length=10, choices=CONTENT_STATUS, default='draft')
+    scheduled_release = models.DateTimeField("Scheduled Release", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -84,6 +84,7 @@ class Comment(models.Model):
     content_id = models.ForeignKey(CourseContent, verbose_name="konten", on_delete=models.CASCADE)
     member_id = models.ForeignKey(CourseMember, verbose_name="pengguna", on_delete=models.CASCADE)
     comment = models.TextField('komentar')
+    is_approved = models.BooleanField("Is Approved", default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

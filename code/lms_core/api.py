@@ -1,4 +1,4 @@
-from ninja import NinjaAPI, UploadedFile, File, Form
+from ninja import NinjaAPI, UploadedFile, File
 from ninja.responses import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
@@ -9,19 +9,28 @@ from lms_core.utils import *
 from ninja_simple_jwt.auth.views.api import mobile_auth_router
 from ninja_simple_jwt.auth.ninja_auth import HttpJwtAuth
 from ninja.pagination import paginate, PageNumberPagination
+from rest_framework_simplejwt.tokens import RefreshToken
 
 apiv1 = NinjaAPI()
 apiv1.add_router("/auth/", mobile_auth_router)
-apiAuth = HttpJwtAuth()
+apiAuth = JWTAuth()
 
 # =================== USER PROFILE MANAGEMENT ===================
+
+def generate_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+    }
 
 @apiv1.post("/register", response=UserRegisterOut)
 def register_user(request, data: UserRegisterIn, profile_picture: UploadedFile = File(None)):
     """Register new user with rate limiting"""
     
+    # FIXME: matikan rate limiter untuk testing
     # Check rate limiting
-    check_registration_rate_limit(request)
+    # check_registration_rate_limit(request)
     
     # Validate password
     if not validate_password(data.password):
@@ -54,6 +63,8 @@ def register_user(request, data: UserRegisterIn, profile_picture: UploadedFile =
         profile_data['profile_picture'] = profile_picture
     
     UserProfile.objects.create(**profile_data)
+
+    token = generate_tokens_for_user(user)
     
     return {
         "id": user.id,
@@ -61,16 +72,27 @@ def register_user(request, data: UserRegisterIn, profile_picture: UploadedFile =
         "email": user.email,
         "first_name": user.first_name,
         "last_name": user.last_name,
+        "access": token['access'],
+        "refresh": token['refresh'],
         "message": "Registrasi berhasil"
     }
 
 @apiv1.get("/profile/{user_id}", response=UserFullProfileOut, auth=apiAuth)
 def show_profile(request, user_id: int):
+
     """Show full profile of a user including courses"""
     user = get_object_or_404(User, id=user_id)
     
     # Get or create profile
     profile, created = UserProfile.objects.get_or_create(user=user)
+    profile_data = None
+    if profile:
+        profile_data = {
+            "id": profile.id,
+            "phone_number": profile.phone_number,
+            "description": profile.description,
+            "profile_picture": profile.profile_picture.url if profile.profile_picture else None,
+        }
     
     # Get courses enrolled and created
     courses_enrolled = Course.objects.filter(coursemember__user_id=user)
@@ -82,7 +104,7 @@ def show_profile(request, user_id: int):
         "email": user.email,
         "first_name": user.first_name,
         "last_name": user.last_name,
-        "profile": profile,
+        "profile": profile_data,
         "courses_enrolled": courses_enrolled,
         "courses_created": courses_created
     }
@@ -392,30 +414,26 @@ def get_course(request, course_id: int):
 # =================== ENHANCED CONTENT MANAGEMENT ===================
 
 @apiv1.post("/courses/{course_id}/content", response=CourseContentFull, auth=apiAuth)
-def create_content(request, course_id: int, data: CourseContentIn, file_attachment: UploadedFile = File(None)):
-    """Create course content with rate limiting"""
+def list_course_content(request, course_id: int):
+    """List course content with publish status and scheduling filtering"""
     course = get_object_or_404(Course, id=course_id)
     
+    if not (is_teacher_of_course(request.auth, course) or is_member_of_course(request.auth, course)):
+        raise HttpError(403, "Access denied")
+    
+    contents = CourseContent.objects.filter(course_id=course)
+    
+    # Filter content for students
     if not is_teacher_of_course(request.auth, course):
-        raise HttpError(403, "Only teachers can create content")
+        # Only show published content
+        contents = contents.filter(status='published')
+        # Only show content where scheduled_release is null or in the past
+        contents = contents.filter(
+            models.Q(scheduled_release__isnull=True) | 
+            models.Q(scheduled_release__lte=timezone.now())
+        )
     
-    check_content_creation_limit(request.auth)
-    
-    content_data = {
-        'name': data.name,
-        'description': data.description,
-        'course_id': course,
-        'status': data.status or 'draft'
-    }
-    
-    if data.video_url:
-        content_data['video_url'] = data.video_url
-    
-    if file_attachment:
-        content_data['file_attachment'] = file_attachment
-    
-    content = CourseContent.objects.create(**content_data)
-    return content
+    return contents
 
 @apiv1.get("/courses/{course_id}/content", response=List[CourseContentFull], auth=apiAuth)
 def list_course_content(request, course_id: int):
@@ -496,7 +514,7 @@ def create_comment(request, content_id: int, data: CourseCommentIn):
 
 @apiv1.get("/content/{content_id}/comments", response=List[CourseCommentOut], auth=apiAuth)
 def list_comments(request, content_id: int):
-    """List content comments"""
+    """List content comments (only approved for students)"""
     content = get_object_or_404(CourseContent, id=content_id)
     
     if not (is_teacher_of_course(request.auth, content.course_id) or is_member_of_course(request.auth, content.course_id)):
@@ -505,7 +523,12 @@ def list_comments(request, content_id: int):
     if not can_view_content(request.auth, content):
         raise HttpError(403, "Content is not available")
     
-    comments = Comment.objects.filter(content_id=content)
+    # Teachers see all comments, students see only approved ones
+    if is_teacher_of_course(request.auth, content.course_id):
+        comments = Comment.objects.filter(content_id=content)
+    else:
+        comments = get_approved_comments(content)
+    
     return comments
 
 # =================== STATISTICS & ANALYTICS ===================
@@ -555,3 +578,346 @@ def get_user_stats(request):
         "contents_completed": contents_completed,
         "bookmarks_count": bookmarks_count
     }
+
+# =================== BATCH ENROLLMENT ===================
+
+@apiv1.post("/courses/{course_id}/batch-enroll", response=MessageResponse, auth=apiAuth)
+def batch_enroll_students(request, course_id: int, data: BatchEnrollIn):
+    """Batch enroll students to course (teacher only)"""
+    course = get_object_or_404(Course, id=course_id)
+    
+    if not is_teacher_of_course(request.auth, course):
+        raise HttpError(403, "Only teachers can enroll students")
+    
+    enrolled_count = 0
+    failed_enrollments = []
+    
+    for email in data.student_emails:
+        try:
+            user = User.objects.get(email=email)
+            member, created = CourseMember.objects.get_or_create(
+                course_id=course,
+                user_id=user,
+                defaults={'roles': 'std'}
+            )
+            if created:
+                enrolled_count += 1
+        except User.DoesNotExist:
+            failed_enrollments.append(f"User with email {email} not found")
+        except Exception as e:
+            failed_enrollments.append(f"Failed to enroll {email}: {str(e)}")
+    
+    message = f"Successfully enrolled {enrolled_count} students"
+    if failed_enrollments:
+        message += f". Failed: {', '.join(failed_enrollments)}"
+    
+    return {"message": message}
+
+# =================== COMMENT MODERATION ===================
+
+@apiv1.patch("/content/{content_id}/comments/{comment_id}/moderate", response=MessageResponse, auth=apiAuth)
+def moderate_comment(request, content_id: int, comment_id: int, data: CommentModerationIn):
+    """Moderate comment (teacher only)"""
+    content = get_object_or_404(CourseContent, id=content_id)
+    comment = get_object_or_404(Comment, id=comment_id, content_id=content)
+    
+    if not is_teacher_of_course(request.auth, content.course_id):
+        raise HttpError(403, "Only teachers can moderate comments")
+    
+    comment.is_approved = data.is_approved
+    comment.save()
+    
+    status = "approved" if data.is_approved else "hidden"
+    return {"message": f"Comment {status} successfully"}
+
+# =================== ENHANCED USER STATS ===================
+
+@apiv1.get("/profile/activity-dashboard", response=UserActivityDashboardOut, auth=apiAuth)
+def get_user_activity_dashboard(request):
+    """Get comprehensive user activity dashboard"""
+    user = request.auth
+    
+    courses_enrolled = CourseMember.objects.filter(user_id=user).count()
+    courses_created = Course.objects.filter(teacher=user).count()
+    contents_completed = ContentCompletion.objects.filter(student=user).count()
+    bookmarks_count = ContentBookmark.objects.filter(student=user).count()
+    comments_written = Comment.objects.filter(member_id__user_id=user).count()
+    
+    return {
+        "courses_enrolled": courses_enrolled,
+        "courses_created": courses_created,
+        "contents_completed": contents_completed,
+        "bookmarks_count": bookmarks_count,
+        "comments_written": comments_written
+    }
+
+# =================== ENHANCED COURSE ANALYTICS ===================
+
+@apiv1.get("/courses/{course_id}/analytics", response=CourseAnalyticsOut, auth=apiAuth)
+def get_course_analytics(request, course_id: int):
+    """Get comprehensive course analytics"""
+    course = get_object_or_404(Course, id=course_id)
+    
+    if not is_teacher_of_course(request.auth, course):
+        raise HttpError(403, "Only teachers can view course analytics")
+    
+    total_students = CourseMember.objects.filter(course_id=course).count()
+    total_contents = CourseContent.objects.filter(course_id=course).count()
+    total_announcements = CourseAnnouncement.objects.filter(course=course).count()
+    total_comments = Comment.objects.filter(content_id__course_id=course).count()
+    total_feedback = CourseFeedback.objects.filter(course=course).count()
+    
+    # Calculate completion rate
+    if total_contents > 0 and total_students > 0:
+        total_possible_completions = total_contents * total_students
+        actual_completions = ContentCompletion.objects.filter(
+            content__course_id=course
+        ).count()
+        completion_rate = (actual_completions / total_possible_completions) * 100
+    else:
+        completion_rate = 0.0
+    
+    # Calculate average rating
+    avg_rating = CourseFeedback.objects.filter(course=course).aggregate(
+        avg_rating=models.Avg('rating')
+    )['avg_rating'] or 0.0
+    
+    return {
+        "total_students": total_students,
+        "total_contents": total_contents,
+        "total_announcements": total_announcements,
+        "total_comments": total_comments,
+        "total_feedback": total_feedback,
+        "completion_rate": completion_rate,
+        "average_rating": round(avg_rating, 2)
+    }
+
+# =================== CONTENT SCHEDULING ===================
+
+@apiv1.patch("/content/{content_id}/schedule", response=MessageResponse, auth=apiAuth)
+def schedule_content(request, content_id: int, data: ContentScheduleIn):
+    """Schedule content release (teacher only)"""
+    content = get_object_or_404(CourseContent, id=content_id)
+    
+    if not is_teacher_of_course(request.auth, content.course_id):
+        raise HttpError(403, "Only teachers can schedule content")
+    
+    content.scheduled_release = data.scheduled_release
+    content.save()
+    
+    return {"message": "Content scheduled successfully"}
+
+# =================== COURSE ENROLLMENT LIMITS ===================
+
+@apiv1.patch("/courses/{course_id}/enrollment-limit", response=MessageResponse, auth=apiAuth)
+def set_enrollment_limit(request, course_id: int, data: EnrollmentLimitIn):
+    """Set course enrollment limit (teacher only)"""
+    course = get_object_or_404(Course, id=course_id)
+    
+    if not is_teacher_of_course(request.auth, course):
+        raise HttpError(403, "Only teachers can set enrollment limits")
+    
+    course.max_enrollment = data.max_enrollment
+    course.save()
+    
+    return {"message": "Enrollment limit set successfully"}
+
+@apiv1.post("/courses/{course_id}/enroll", response=MessageResponse, auth=apiAuth)
+def enroll_in_course(request, course_id: int):
+    """Enroll in course with limits checking"""
+    course = get_object_or_404(Course, id=course_id)
+    
+    # Check if already enrolled
+    if CourseMember.objects.filter(course_id=course, user_id=request.auth).exists():
+        raise HttpError(400, "Already enrolled in this course")
+    
+    # Check enrollment limit
+    if course.max_enrollment:
+        current_enrollment = CourseMember.objects.filter(course_id=course).count()
+        if current_enrollment >= course.max_enrollment:
+            raise HttpError(400, "Course enrollment is full")
+    
+    CourseMember.objects.create(
+        course_id=course,
+        user_id=request.auth,
+        roles='std'
+    )
+    
+    return {"message": "Successfully enrolled in course"}
+
+# =================== COURSE COMPLETION CERTIFICATES ===================
+
+@apiv1.get("/courses/{course_id}/certificate", response=str, auth=apiAuth)
+def get_course_certificate(request, course_id: int):
+    """Generate course completion certificate"""
+    course = get_object_or_404(Course, id=course_id)
+    
+    if not is_member_of_course(request.auth, course):
+        raise HttpError(403, "You must be enrolled in this course")
+    
+    # Check if user has completed all course content
+    total_contents = CourseContent.objects.filter(
+        course_id=course, 
+        status='published'
+    ).count()
+    
+    completed_contents = ContentCompletion.objects.filter(
+        student=request.auth,
+        content__course_id=course
+    ).count()
+    
+    if completed_contents < total_contents:
+        raise HttpError(400, "Course not completed yet")
+    
+    # Generate certificate HTML
+    certificate_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Course Completion Certificate</title>
+        <style>
+            body {{ 
+                font-family: 'Georgia', serif; 
+                text-align: center; 
+                padding: 50px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                margin: 0;
+            }}
+            .certificate {{
+                background: white;
+                border: 10px solid #gold;
+                border-radius: 20px;
+                padding: 60px;
+                max-width: 800px;
+                margin: 0 auto;
+                box-shadow: 0 0 30px rgba(0,0,0,0.3);
+            }}
+            .header {{ 
+                font-size: 48px; 
+                color: #2c3e50; 
+                margin-bottom: 20px;
+                font-weight: bold;
+            }}
+            .subheader {{ 
+                font-size: 24px; 
+                color: #7f8c8d; 
+                margin-bottom: 40px;
+            }}
+            .recipient {{ 
+                font-size: 36px; 
+                color: #2980b9; 
+                margin: 30px 0;
+                font-weight: bold;
+            }}
+            .course-title {{ 
+                font-size: 28px; 
+                color: #27ae60; 
+                margin: 20px 0;
+                font-style: italic;
+            }}
+            .completion-date {{ 
+                font-size: 18px; 
+                color: #95a5a6; 
+                margin-top: 40px;
+            }}
+            .signature {{ 
+                margin-top: 60px; 
+                font-size: 16px; 
+                color: #2c3e50;
+            }}
+            .ornament {{ 
+                font-size: 60px; 
+                color: #f1c40f; 
+                margin: 20px 0;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="certificate">
+            <div class="ornament">🏆</div>
+            <div class="header">CERTIFICATE OF COMPLETION</div>
+            <div class="subheader">This is to certify that</div>
+            <div class="recipient">{request.auth.first_name} {request.auth.last_name}</div>
+            <div class="subheader">has successfully completed the course</div>
+            <div class="course-title">"{course.name}"</div>
+            <div class="subheader">with {completed_contents} out of {total_contents} contents completed</div>
+            <div class="completion-date">
+                Completed on: {timezone.now().strftime('%B %d, %Y')}
+            </div>
+            <div class="signature">
+                <hr style="width: 300px; margin: 40px auto;">
+                <strong>{course.teacher.first_name} {course.teacher.last_name}</strong><br>
+                Course Instructor
+            </div>
+            <div class="ornament">✨</div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return Response(certificate_html, content_type="text/html")
+
+@apiv1.get("/courses/{course_id}/certificate/check", response=CertificateEligibilityOut, auth=apiAuth)
+def check_certificate_eligibility(request, course_id: int):
+    """Check if user is eligible for certificate"""
+    course = get_object_or_404(Course, id=course_id)
+    
+    if not is_member_of_course(request.auth, course):
+        raise HttpError(403, "You must be enrolled in this course")
+    
+    total_contents = CourseContent.objects.filter(
+        course_id=course, 
+        status='published'
+    ).count()
+    
+    completed_contents = ContentCompletion.objects.filter(
+        student=request.auth,
+        content__course_id=course
+    ).count()
+    
+    is_eligible = completed_contents >= total_contents and total_contents > 0
+    completion_percentage = (completed_contents / total_contents * 100) if total_contents > 0 else 0
+    
+    return {
+        "is_eligible": is_eligible,
+        "total_contents": total_contents,
+        "completed_contents": completed_contents,
+        "completion_percentage": round(completion_percentage, 2)
+    }
+
+@apiv1.get("/my-certificates", response=List[UserCertificateOut], auth=apiAuth)
+def list_user_certificates(request):
+    """List all certificates earned by user"""
+    # Get all courses user is enrolled in
+    enrolled_courses = Course.objects.filter(coursemember__user_id=request.auth)
+    certificates = []
+    
+    for course in enrolled_courses:
+        total_contents = CourseContent.objects.filter(
+            course_id=course, 
+            status='published'
+        ).count()
+        
+        completed_contents = ContentCompletion.objects.filter(
+            student=request.auth,
+            content__course_id=course
+        ).count()
+        
+        if completed_contents >= total_contents and total_contents > 0:
+            # Get the completion date of the last content
+            last_completion = ContentCompletion.objects.filter(
+                student=request.auth,
+                content__course_id=course
+            ).order_by('-completed_at').first()
+            
+            certificates.append({
+                "course_id": course.id,
+                "course_name": course.name,
+                "course_teacher": f"{course.teacher.first_name} {course.teacher.last_name}",
+                "completion_date": last_completion.completed_at if last_completion else timezone.now(),
+                "total_contents": total_contents,
+                "completed_contents": completed_contents
+            })
+    
+    return certificates

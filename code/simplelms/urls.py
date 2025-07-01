@@ -26,5 +26,5 @@ urlpatterns = [
     path('tambah/', addData),
     path('ubah/', editData),
     path('hapus/', deleteData),
-    path('', index),
+    path('', index)
 ]

@@ -2,6 +2,7 @@
 from lms_core.models import CourseMember
 from collections import defaultdict
 
+# Handle duplicates in CourseMember table
 def clean_duplicates():
     duplicates = defaultdict(list)
 
